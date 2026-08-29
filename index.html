@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Calculadora de Nota Media Universitaria | Niche Calc</title>
+<meta name="description" content="Calcula tu nota media ponderada por créditos de forma rápida y gratuita. Añade tus asignaturas, créditos y notas y obtén tu media al instante.">
+<style>
+  :root {
+    --bg: #f7f7fb;
+    --card: #ffffff;
+    --primary: #4f46e5;
+    --primary-dark: #4338ca;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --danger: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px 16px 60px;
+  }
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  header a {
+    color: var(--muted);
+    font-size: 14px;
+    text-decoration: none;
+  }
+  h1 {
+    font-size: 28px;
+    margin: 8px 0 4px;
+  }
+  header p {
+    color: var(--muted);
+    margin: 0;
+    font-size: 15px;
+  }
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    margin-bottom: 20px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  th {
+    text-align: left;
+    font-size: 13px;
+    color: var(--muted);
+    padding-bottom: 8px;
+    font-weight: 600;
+  }
+  td {
+    padding: 6px 4px;
+  }
+  input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 15px;
+    background: #fafafa;
+  }
+  input:focus {
+    outline: none;
+    border-color: var(--primary);
+    background: #fff;
+  }
+  .remove-btn {
+    background: none;
+    border: none;
+    color: var(--danger);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px 8px;
+    line-height: 1;
+  }
+  .actions {
+    display: flex;
+    gap: 10px;
+    margin-top: 14px;
+  }
+  button.primary, button.add {
+    border: none;
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  button.add {
+    background: #eef2ff;
+    color: var(--primary);
+    flex: 1;
+  }
+  button.add:hover { background: #e0e7ff; }
+  .result {
+    text-align: center;
+    padding: 24px 20px;
+    background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+    color: white;
+    border-radius: 16px;
+  }
+  .result .value {
+    font-size: 42px;
+    font-weight: 800;
+    margin: 4px 0;
+  }
+  .result .label {
+    font-size: 14px;
+    opacity: 0.85;
+  }
+  .info {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.6;
+    margin-top: 30px;
+  }
+  .info h2 {
+    font-size: 17px;
+    color: var(--text);
+  }
+  @media (max-width: 480px) {
+    th:nth-child(2), th:nth-child(3) { font-size: 11px; }
+    h1 { font-size: 23px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a href="/">Niche Calc</a>
+    <h1>Calculadora de Nota Media Universitaria</h1>
+    <p>Calcula tu media ponderada por créditos en segundos</p>
+  </header>
+
+  <div class="card">
+    <table id="subjectsTable">
+      <thead>
+        <tr>
+          <th style="width:45%">Asignatura</th>
+          <th style="width:20%">Créditos</th>
+          <th style="width:25%">Nota (0-10)</th>
+          <th style="width:10%"></th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div class="actions">
+      <button class="add" onclick="addRow()">+ Añadir asignatura</button>
+    </div>
+  </div>
+
+  <div class="result">
+    <div class="label">Tu nota media ponderada es</div>
+    <div class="value" id="resultValue">0.00</div>
+    <div class="label" id="creditsInfo">0 créditos totales</div>
+  </div>
+
+  <div class="info">
+    <h2>¿Cómo se calcula la nota media ponderada?</h2>
+    <p>La nota media ponderada por créditos se calcula multiplicando la nota de cada asignatura por sus créditos, sumando todos esos resultados, y dividiendo el total entre la suma de todos los créditos. Este es el método que usan la mayoría de universidades para calcular tu expediente académico, ya que da más peso a las asignaturas con más créditos.</p>
+    <p>Fórmula: (Nota1 × Créditos1 + Nota2 × Créditos2 + ...) / (Créditos1 + Créditos2 + ...)</p>
+  </div>
+</div>
+
+<script>
+  let rowCount = 0;
+
+  function addRow(name = '', credits = '', grade = '') {
+    rowCount++;
+    const tbody = document.getElementById('tbody');
+    const tr = document.createElement('tr');
+    tr.id = 'row-' + rowCount;
+    tr.innerHTML = `
+      <td><input type="text" placeholder="Ej: Matemáticas" value="${name}" oninput="calculate()"></td>
+      <td><input type="number" min="0" step="0.5" placeholder="6" value="${credits}" oninput="calculate()"></td>
+      <td><input type="number" min="0" max="10" step="0.01" placeholder="7.5" value="${grade}" oninput="calculate()"></td>
+      <td><button class="remove-btn" onclick="removeRow(${rowCount})">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  function removeRow(id) {
+    const row = document.getElementById('row-' + id);
+    if (row) row.remove();
+    calculate();
+  }
+
+  function calculate() {
+    const rows = document.querySelectorAll('#tbody tr');
+    let totalWeighted = 0;
+    let totalCredits = 0;
+
+    rows.forEach(row => {
+      const inputs = row.querySelectorAll('input');
+      const credits = parseFloat(inputs[1].value);
+      const grade = parseFloat(inputs[2].value);
+      if (!isNaN(credits) && !isNaN(grade) && credits > 0) {
+        totalWeighted += credits * grade;
+        totalCredits += credits;
+      }
+    });
+
+    const average = totalCredits > 0 ? (totalWeighted / totalCredits) : 0;
+    document.getElementById('resultValue').textContent = average.toFixed(2);
+    document.getElementById('creditsInfo').textContent = totalCredits + ' créditos totales';
+  }
+
+  // Filas iniciales de ejemplo
+  addRow('', '', '');
+  addRow('', '', '');
+  addRow('', '', '');
+</script>
+</body>
+</html>
