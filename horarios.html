@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Horarios de Estudio | Niche Calc</title>
+<meta name="description" content="Crea tu horario de estudio semanal automáticamente. Añade tus asignaturas y las horas disponibles, y genera un reparto equilibrado al instante.">
+<style>
+  :root {
+    --bg: #f7f7fb;
+    --card: #ffffff;
+    --primary: #ea580c;
+    --primary-dark: #c2410c;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+    --danger: #ef4444;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px 16px 60px;
+  }
+  .wrap { max-width: 680px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 24px; }
+  header a { color: var(--muted); font-size: 14px; text-decoration: none; }
+  h1 { font-size: 26px; margin: 8px 0 4px; }
+  header p { color: var(--muted); margin: 0; font-size: 15px; }
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    margin-bottom: 20px;
+  }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+  input[type="text"], input[type="number"] {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 15px;
+    background: #fafafa;
+  }
+  input:focus { outline: none; border-color: var(--primary); background: #fff; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; font-size: 13px; color: var(--muted); padding-bottom: 8px; font-weight: 600; }
+  td { padding: 6px 4px; }
+  .remove-btn {
+    background: none; border: none; color: var(--danger);
+    font-size: 20px; cursor: pointer; padding: 4px 8px; line-height: 1;
+  }
+  .day-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .day-box {
+    text-align: center;
+    padding: 10px 6px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fafafa;
+  }
+  .day-box label { margin-bottom: 4px; }
+  .day-box input { text-align: center; padding: 8px 4px; }
+  button.add, button.generate {
+    border: none;
+    border-radius: 8px;
+    padding: 12px 18px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+    margin-top: 14px;
+  }
+  button.add { background: #fff7ed; color: var(--primary-dark); }
+  button.add:hover { background: #ffedd5; }
+  button.generate { background: var(--primary); color: white; }
+  button.generate:hover { background: var(--primary-dark); }
+  .schedule {
+    display: grid;
+    gap: 10px;
+  }
+  .day-result {
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 12px 16px;
+  }
+  .day-result .day-name { font-weight: 700; font-size: 14px; margin-bottom: 6px; color: var(--primary-dark); }
+  .block {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    padding: 4px 0;
+    border-top: 1px solid var(--border);
+  }
+  .block:first-of-type { border-top: none; }
+  .empty-day { color: var(--muted); font-size: 13px; font-style: italic; }
+  .info { font-size: 13px; color: var(--muted); line-height: 1.6; margin-top: 30px; }
+  .info h2 { font-size: 17px; color: var(--text); }
+  .footer-nav { text-align: center; margin-top: 30px; font-size: 14px; }
+  .footer-nav a { color: var(--primary-dark); text-decoration: none; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a href="/">Niche Calc</a>
+    <h1>Generador de Horarios de Estudio</h1>
+    <p>Reparte tus asignaturas en la semana según las horas que necesites y tengas disponibles</p>
+  </header>
+
+  <div class="card">
+    <label>1. Tus asignaturas y horas semanales necesarias</label>
+    <table id="subjectsTable">
+      <thead><tr><th style="width:60%">Asignatura</th><th style="width:30%">Horas/semana</th><th></th></tr></thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <button class="add" onclick="addSubjectRow()">+ Añadir asignatura</button>
+  </div>
+
+  <div class="card">
+    <label>2. Horas disponibles por día</label>
+    <div class="day-grid" id="dayGrid"></div>
+  </div>
+
+  <button class="generate" onclick="generateSchedule()">Generar horario</button>
+
+  <div class="card" id="resultCard" style="display:none;">
+    <label>Tu horario propuesto</label>
+    <div class="schedule" id="scheduleResult"></div>
+  </div>
+
+  <div class="info">
+    <h2>¿Cómo funciona?</h2>
+    <p>La herramienta reparte las horas que necesitas dedicar a cada asignatura entre los días en los que tienes disponibilidad, priorizando las asignaturas con más horas pendientes y evitando saturar un único día. Es un punto de partida orientativo: ajústalo luego según tu energía y tus horarios de clase.</p>
+  </div>
+
+  <div class="footer-nav">
+    <a href="/">← Ver todas las calculadoras</a>
+  </div>
+</div>
+
+<script>
+  let subjectRowCount = 0;
+  const days = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo'];
+
+  function addSubjectRow(name = '', hours = '') {
+    subjectRowCount++;
+    const tbody = document.getElementById('tbody');
+    const tr = document.createElement('tr');
+    tr.id = 'srow-' + subjectRowCount;
+    tr.innerHTML = `
+      <td><input type="text" placeholder="Ej: Cálculo" value="${name}"></td>
+      <td><input type="number" min="0" step="0.5" placeholder="4" value="${hours}"></td>
+      <td><button class="remove-btn" onclick="document.getElementById('srow-${subjectRowCount}').remove()">×</button></td>
+    `;
+    tbody.appendChild(tr);
+  }
+
+  function buildDayGrid() {
+    const grid = document.getElementById('dayGrid');
+    days.forEach(day => {
+      const box = document.createElement('div');
+      box.className = 'day-box';
+      box.innerHTML = `<label>${day}</label><input type="number" min="0" step="0.5" placeholder="0" id="day-${day}">`;
+      grid.appendChild(box);
+    });
+  }
+
+  function generateSchedule() {
+    // Leer asignaturas
+    const subjectRows = document.querySelectorAll('#tbody tr');
+    let subjects = [];
+    subjectRows.forEach(row => {
+      const inputs = row.querySelectorAll('input');
+      const name = inputs[0].value.trim();
+      const hours = parseFloat(inputs[1].value);
+      if (name && !isNaN(hours) && hours > 0) {
+        subjects.push({ name, remaining: hours });
+      }
+    });
+
+    // Leer disponibilidad por día
+    let availability = days.map(day => ({
+      day,
+      remaining: parseFloat(document.getElementById('day-' + day).value) || 0
+    }));
+
+    if (subjects.length === 0 || availability.every(d => d.remaining === 0)) {
+      document.getElementById('resultCard').style.display = 'block';
+      document.getElementById('scheduleResult').innerHTML = '<p class="empty-day">Añade al menos una asignatura con horas y algún día con disponibilidad.</p>';
+      return;
+    }
+
+    // Estructura de resultado por día
+    let schedule = {};
+    days.forEach(d => schedule[d] = []);
+
+    // Reparto: por cada día disponible, asignar en bloques de 1h (o el resto) a la asignatura con más horas pendientes
+    availability.forEach(dayInfo => {
+      let dayRemaining = dayInfo.remaining;
+      while (dayRemaining > 0) {
+        // Ordenar asignaturas por horas pendientes (más pendientes primero)
+        subjects = subjects.filter(s => s.remaining > 0);
+        if (subjects.length === 0) break;
+        subjects.sort((a, b) => b.remaining - a.remaining);
+        const subject = subjects[0];
+        const block = Math.min(1, dayRemaining, subject.remaining);
+        if (block <= 0) break;
+        schedule[dayInfo.day].push({ name: subject.name, hours: block });
+        subject.remaining -= block;
+        dayRemaining -= block;
+      }
+    });
+
+    // Renderizar
+    const container = document.getElementById('scheduleResult');
+    container.innerHTML = '';
+    days.forEach(day => {
+      const blocks = schedule[day];
+      // Agrupar bloques consecutivos de la misma asignatura
+      let merged = [];
+      blocks.forEach(b => {
+        const last = merged[merged.length - 1];
+        if (last && last.name === b.name) {
+          last.hours += b.hours;
+        } else {
+          merged.push({ ...b });
+        }
+      });
+
+      const dayDiv = document.createElement('div');
+      dayDiv.className = 'day-result';
+      let html = `<div class="day-name">${day}</div>`;
+      if (merged.length === 0) {
+        html += `<div class="empty-day">Sin estudio programado</div>`;
+      } else {
+        merged.forEach(b => {
+          html += `<div class="block"><span>${b.name}</span><span>${b.hours.toFixed(1)}h</span></div>`;
+        });
+      }
+      dayDiv.innerHTML = html;
+      container.appendChild(dayDiv);
+    });
+
+    // Avisar de horas pendientes sin ubicar
+    const leftover = subjects.filter(s => s.remaining > 0);
+    if (leftover.length > 0) {
+      const warn = document.createElement('div');
+      warn.className = 'day-result';
+      warn.style.background = '#fef2f2';
+      let html = `<div class="day-name" style="color:#b91c1c;">Horas sin ubicar (falta disponibilidad)</div>`;
+      leftover.forEach(s => {
+        html += `<div class="block"><span>${s.name}</span><span>${s.remaining.toFixed(1)}h</span></div>`;
+      });
+      warn.innerHTML = html;
+      container.appendChild(warn);
+    }
+
+    document.getElementById('resultCard').style.display = 'block';
+  }
+
+  // Inicializar
+  buildDayGrid();
+  addSubjectRow('', '');
+  addSubjectRow('', '');
+  addSubjectRow('', '');
+</script>
+</body>
+</html>
