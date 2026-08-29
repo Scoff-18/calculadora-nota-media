@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador de Citas APA y Vancouver | Niche Calc</title>
+<meta name="description" content="Genera citas bibliográficas en formato APA o Vancouver automáticamente. Rellena los datos y copia la referencia lista para tu trabajo académico.">
+<style>
+  :root {
+    --bg: #f7f7fb;
+    --card: #ffffff;
+    --primary: #7c3aed;
+    --primary-dark: #6d28d9;
+    --text: #1f2937;
+    --muted: #6b7280;
+    --border: #e5e7eb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px 16px 60px;
+  }
+  .wrap { max-width: 600px; margin: 0 auto; }
+  header { text-align: center; margin-bottom: 24px; }
+  header a { color: var(--muted); font-size: 14px; text-decoration: none; }
+  h1 { font-size: 26px; margin: 8px 0 4px; }
+  header p { color: var(--muted); margin: 0; font-size: 15px; }
+  .card {
+    background: var(--card);
+    border-radius: 16px;
+    padding: 22px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    margin-bottom: 20px;
+  }
+  .tabs { display: flex; gap: 8px; margin-bottom: 18px; }
+  .tab {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border-radius: 8px;
+    background: #f3f4f6;
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    border: none;
+  }
+  .tab.active { background: var(--primary); color: white; }
+  .field-group { display: none; }
+  .field-group.active { display: block; }
+  label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--muted);
+    margin-bottom: 6px;
+    margin-top: 14px;
+  }
+  label:first-child { margin-top: 0; }
+  input[type="text"], select {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 15px;
+    background: #fafafa;
+  }
+  input:focus, select:focus { outline: none; border-color: var(--primary); background: #fff; }
+  .output {
+    margin-top: 20px;
+    background: #f9fafb;
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 15px;
+    line-height: 1.6;
+    min-height: 24px;
+  }
+  .output.empty { color: var(--muted); font-style: italic; }
+  .copy-btn {
+    margin-top: 10px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    width: 100%;
+  }
+  .copy-btn:hover { background: var(--primary-dark); }
+  .copy-btn.copied { background: #059669; }
+  .info { font-size: 13px; color: var(--muted); line-height: 1.6; margin-top: 30px; }
+  .info h2 { font-size: 17px; color: var(--text); }
+  .footer-nav { text-align: center; margin-top: 30px; font-size: 14px; }
+  .footer-nav a { color: var(--primary-dark); text-decoration: none; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <a href="/">Niche Calc</a>
+    <h1>Generador de Citas Bibliográficas</h1>
+    <p>Rellena los datos y genera la referencia en formato APA o Vancouver</p>
+  </header>
+
+  <div class="card">
+    <div class="tabs">
+      <button class="tab active" id="tabApa" onclick="switchFormat('apa')">APA (7ª ed.)</button>
+      <button class="tab" id="tabVancouver" onclick="switchFormat('vancouver')">Vancouver</button>
+    </div>
+
+    <label>Tipo de fuente</label>
+    <select id="sourceType" onchange="generate()">
+      <option value="book">Libro</option>
+      <option value="journal">Artículo de revista</option>
+      <option value="web">Página web</option>
+    </select>
+
+    <label>Autor(es) — Apellido, Nombre</label>
+    <input type="text" id="author" placeholder="Ej: García, María" oninput="generate()">
+
+    <label>Año</label>
+    <input type="text" id="year" placeholder="2024" oninput="generate()">
+
+    <label>Título</label>
+    <input type="text" id="title" placeholder="Título de la obra" oninput="generate()">
+
+    <div id="extraFields"></div>
+  </div>
+
+  <div class="card">
+    <label>Referencia generada</label>
+    <div class="output empty" id="output">Rellena los campos para generar la cita</div>
+    <button class="copy-btn" id="copyBtn" onclick="copyResult()">Copiar cita</button>
+  </div>
+
+  <div class="info">
+    <h2>Sobre los formatos</h2>
+    <p>APA (7ª edición) es el formato más usado en ciencias sociales y humanidades. Vancouver se usa principalmente en ciencias de la salud y medicina, y numera las referencias en el orden en que aparecen citadas en el texto. Revisa siempre la guía específica de tu universidad o revista, ya que puede haber variaciones menores.</p>
+  </div>
+
+  <div class="footer-nav">
+    <a href="/">← Ver todas las calculadoras</a>
+  </div>
+</div>
+
+<script>
+  let currentFormat = 'apa';
+
+  function switchFormat(fmt) {
+    currentFormat = fmt;
+    document.getElementById('tabApa').classList.toggle('active', fmt === 'apa');
+    document.getElementById('tabVancouver').classList.toggle('active', fmt === 'vancouver');
+    generate();
+  }
+
+  function updateExtraFields() {
+    const type = document.getElementById('sourceType').value;
+    const container = document.getElementById('extraFields');
+    let html = '';
+    if (type === 'book') {
+      html = `
+        <label>Editorial</label>
+        <input type="text" id="publisher" placeholder="Ej: Editorial Planeta" oninput="generate()">
+      `;
+    } else if (type === 'journal') {
+      html = `
+        <label>Nombre de la revista</label>
+        <input type="text" id="journalName" placeholder="Ej: Revista de Psicología" oninput="generate()">
+        <label>Volumen (número)</label>
+        <input type="text" id="volume" placeholder="Ej: 12(3)" oninput="generate()">
+        <label>Páginas</label>
+        <input type="text" id="pages" placeholder="Ej: 45-60" oninput="generate()">
+      `;
+    } else if (type === 'web') {
+      html = `
+        <label>Nombre del sitio web</label>
+        <input type="text" id="siteName" placeholder="Ej: National Geographic" oninput="generate()">
+        <label>URL</label>
+        <input type="text" id="url" placeholder="https://..." oninput="generate()">
+      `;
+    }
+    container.innerHTML = html;
+    generate();
+  }
+
+  function generate() {
+    const type = document.getElementById('sourceType').value;
+    const author = document.getElementById('author').value.trim();
+    const year = document.getElementById('year').value.trim();
+    const title = document.getElementById('title').value.trim();
+    const output = document.getElementById('output');
+
+    if (!author || !year || !title) {
+      output.textContent = 'Rellena los campos para generar la cita';
+      output.classList.add('empty');
+      return;
+    }
+
+    let result = '';
+
+    if (currentFormat === 'apa') {
+      if (type === 'book') {
+        const publisher = document.getElementById('publisher')?.value.trim() || '';
+        result = `${author} (${year}). ${title}. ${publisher}.`;
+      } else if (type === 'journal') {
+        const journalName = document.getElementById('journalName')?.value.trim() || '';
+        const volume = document.getElementById('volume')?.value.trim() || '';
+        const pages = document.getElementById('pages')?.value.trim() || '';
+        result = `${author} (${year}). ${title}. ${journalName}, ${volume}, ${pages}.`;
+      } else if (type === 'web') {
+        const siteName = document.getElementById('siteName')?.value.trim() || '';
+        const url = document.getElementById('url')?.value.trim() || '';
+        result = `${author} (${year}). ${title}. ${siteName}. ${url}`;
+      }
+    } else {
+      // Vancouver
+      if (type === 'book') {
+        const publisher = document.getElementById('publisher')?.value.trim() || '';
+        result = `${author}. ${title}. ${publisher}; ${year}.`;
+      } else if (type === 'journal') {
+        const journalName = document.getElementById('journalName')?.value.trim() || '';
+        const volume = document.getElementById('volume')?.value.trim() || '';
+        const pages = document.getElementById('pages')?.value.trim() || '';
+        result = `${author}. ${title}. ${journalName}. ${year};${volume}:${pages}.`;
+      } else if (type === 'web') {
+        const siteName = document.getElementById('siteName')?.value.trim() || '';
+        const url = document.getElementById('url')?.value.trim() || '';
+        result = `${author}. ${title} [Internet]. ${siteName}; ${year} [citado ${new Date().getFullYear()}]. Disponible en: ${url}`;
+      }
+    }
+
+    output.textContent = result;
+    output.classList.remove('empty');
+  }
+
+  function copyResult() {
+    const output = document.getElementById('output');
+    if (output.classList.contains('empty')) return;
+    navigator.clipboard.writeText(output.textContent).then(() => {
+      const btn = document.getElementById('copyBtn');
+      btn.textContent = '¡Copiado!';
+      btn.classList.add('copied');
+      setTimeout(() => {
+        btn.textContent = 'Copiar cita';
+        btn.classList.remove('copied');
+      }, 1500);
+    });
+  }
+
+  document.getElementById('sourceType').addEventListener('change', updateExtraFields);
+  updateExtraFields();
+</script>
+</body>
+</html>
