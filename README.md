@@ -1,1 +1,1 @@
-# calculadora-nota-media
+# niche calc
